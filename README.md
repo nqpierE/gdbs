@@ -2,6 +2,7 @@
 Application to switch tools of gdb. This application supports legacy gdb, peda, gef, pwndbg.
 
 # installaion
+Run following commands to install application.
 ```
 git clone https://github.com/slothryo/gdbs.git
 cd gdbs
