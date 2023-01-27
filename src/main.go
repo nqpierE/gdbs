@@ -106,7 +106,6 @@ func main() {
 		fmt.Println("  gef			set tool to gef")
 		fmt.Println("  pwndbg		set tool to pwndbg")
 		fmt.Println("  clean			clean application")
-		fmt.Println("  config		configurate application")
 		return
 	}
 	if argslen == 1 {
