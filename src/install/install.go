@@ -28,7 +28,7 @@ func Installpeda(dir string) bool {
 
 func Installgef(dir string) bool {
 	fmt.Println(dir + ".gdbinit-gef.py")
-	_, err := grab.Get(dir+".gdbinit-gef.py", "https://gef.blah.cat/py")
+	_, err := grab.Get(dir+"/.gdbinit-gef.py", "https://gef.blah.cat/py")
 	if err != nil {
 		fmt.Fprint(os.Stderr, "[x] ")
 		fmt.Fprintln(os.Stderr, err)
@@ -37,7 +37,8 @@ func Installgef(dir string) bool {
 	return true
 }
 
-func Installpwndbg(dir string, previous_dir string) bool {
+func Installpwndbg(dir string) bool {
+	fmt.Println(dir, "これ")
 	_, err := git.PlainClone(dir, false, &git.CloneOptions{
 		URL:      "https://github.com/pwndbg/pwndbg.git",
 		Progress: os.Stdout,
@@ -52,12 +53,13 @@ func Installpwndbg(dir string, previous_dir string) bool {
 			fmt.Fprintln(os.Stderr, "[x] ~/.gdbinit is not found")
 			return false
 		} else {
+
 			os.Chdir(dir)
 			cmd := exec.Command("./setup.sh")
 			cmd.Stderr = os.Stderr
 			cmd.Stdout = os.Stdout
 			cmd.Run()
-			os.Chdir(previous_dir)
+			os.Chdir("../")
 			return true
 		}
 	}

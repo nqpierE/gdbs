@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/fatih/color"
@@ -20,18 +21,19 @@ func include(list []string, target string) bool {
 }
 
 type Gdbmod struct {
-	Name            string
-	InstallDir      string
-	RootDir         string
-	GdbmodsDirsList []string
+	Name                 string
+	InstallDir           string
+	AppDir               string
+	GdbModsContainsNames []string
+	StateFile            string
 }
 
 func Install(mod Gdbmod) bool {
 	if mod.Name == "gdb" {
 		return true
 	}
-	if !include(mod.GdbmodsDirsList, mod.Name) {
-		fmt.Println("koko")
+	fmt.Println(!include(mod.GdbModsContainsNames, mod.Name))
+	if !include(mod.GdbModsContainsNames, mod.Name) {
 		var err_flag bool = false
 		switch mod.Name {
 		case "peda":
@@ -43,7 +45,8 @@ func Install(mod Gdbmod) bool {
 				err_flag = !err_flag
 			}
 		case "pwndbg":
-			if !install.Installgef(mod.InstallDir) {
+			fmt.Println("ここ")
+			if !install.Installpwndbg(mod.InstallDir) {
 				err_flag = !err_flag
 			}
 		}
@@ -85,11 +88,10 @@ func Setup(mod Gdbmod) {
 		return
 	} else {
 		fmt.Println("[*] changed tool to " + mod.Name + " successfully")
-		err := os.Truncate(mod.RootDir+"/state.txt", 0)
-		if err != nil {
-			os.Create(mod.RootDir + "/state.txt")
+		if os.Truncate(mod.StateFile, 0) != nil {
+			os.Create(mod.StateFile)
 		}
-		os.WriteFile(mod.RootDir+"/state.txt", []byte(mod.Name), 0644)
+		os.WriteFile(mod.AppDir+"/state.txt", []byte(mod.Name), 0644)
 		return
 	}
 }
@@ -107,36 +109,62 @@ func main() {
 		fmt.Println("  gef			set tool to gef")
 		fmt.Println("  pwndbg		set tool to pwndbg")
 		fmt.Println("  clean			clean application")
+		fmt.Println("  config		configurate application")
 		return
 	}
 	if argslen == 1 {
-
-		root_dir, _ := os.Getwd()
-		root_dirs, _ := os.ReadDir(root_dir)
-		var root_dirs_list []string = []string{}
-		for i := 0; i < len(root_dirs); i++ {
-			root_dirs_list = append(root_dirs_list, root_dirs[i].Name())
+		//get user's home directory
+		hd, _ := os.UserHomeDir()
+		var home_dir string = hd
+		//set directory application generates directories and files
+		//if the directory is not existing, make it
+		var app_dir string = home_dir + "/.gdbs"
+		var app_dir_contains []fs.DirEntry
+		adc1, err := os.ReadDir(app_dir)
+		if err != nil {
+			os.Mkdir(app_dir, 0755)
+			adc2, _ := os.ReadDir(app_dir)
+			app_dir_contains = adc2
+		} else {
+			app_dir_contains = adc1
 		}
-		if include(root_dirs_list, "gdbmods") {
-			os.Mkdir(root_dir+"/gdbmods/", 0755)
+		//get string list of names of directories in app directory
+		//if "gdbmods" (dir) is not existing in this list, make this directory
+		var app_dir_contains_names []string = []string{}
+		for i := 0; i < len(app_dir_contains); i++ {
+			app_dir_contains_names = append(app_dir_contains_names, app_dir_contains[i].Name())
 		}
-		fmt.Println(root_dir)
-		var gdbmods_dir string = root_dir + "/gdbmods/"
-		gdbmods_dirs, _ := os.ReadDir(root_dir + "/gdbmods/")
-		var gdbmods_dirs_list []string = []string{}
-		for i := 0; i < len(gdbmods_dirs); i++ {
-			gdbmods_dirs_list = append(gdbmods_dirs_list, gdbmods_dirs[i].Name())
+		if include(app_dir_contains_names, "gdbmods") {
+			os.Mkdir(app_dir+"/gdbmods/", 0755)
 		}
+		var gdbmods_dir string = app_dir + "/gdbmods/"
+		//get string list of names of directory in gdbmods directory to confirm
+		//installed tools later
+		var gdbmods_dir_contains_names []string = []string{}
+		gdbmods_dir_contains, _ := os.ReadDir(app_dir + "/gdbmods/")
+		for i := 0; i < len(gdbmods_dir_contains); i++ {
+			gdbmods_dir_contains_names = append(gdbmods_dir_contains_names, gdbmods_dir_contains[i].Name())
+		}
+		//make list of all tools can be installed and used.
 		var mod_list []string = []string{"gdb", "peda", "gef", "pwndbg"}
-		var state_file_path string = root_dir + "/state.txt"
+		//path of state file to manage current tool
+		var state_file_path string = app_dir + "/state.txt"
+		if !include(app_dir_contains_names, "state.txt") {
+			new_state_file, err := os.Create(state_file_path)
+			if err != nil {
+				return
+			}
+			os.WriteFile(new_state_file.Name(), []byte("gdb"), 0644)
+		}
+		//processing of install or changing or both of each tool.
 		for i := 0; i < len(mod_list); i++ {
 			if os.Args[1] == mod_list[i] {
 				var eachmod Gdbmod
 				eachmod.Name = mod_list[i]
 				eachmod.InstallDir = gdbmods_dir + eachmod.Name
-				fmt.Println(eachmod.InstallDir)
-				eachmod.RootDir = root_dir
-				eachmod.GdbmodsDirsList = gdbmods_dirs_list
+				eachmod.AppDir = app_dir
+				eachmod.GdbModsContainsNames = gdbmods_dir_contains_names
+				eachmod.StateFile = state_file_path
 				if !Install(eachmod) {
 					return
 				} else {
@@ -169,28 +197,9 @@ func main() {
 			}
 		//cleaning session
 		case "clean":
-			err := os.RemoveAll(gdbmods_dir)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "[x] ")
-				fmt.Fprintln(os.Stderr, err)
-				fmt.Fprintln(os.Stderr, "[x] failed to clean up")
-				return
-			} else {
-				if !(setup.Setgdb()) {
-					fmt.Fprintln(os.Stderr, "[x] failed to change tool to legacy gdb")
-					return
-				} else {
-					fmt.Println("[*] changed tool to legacy gdb successfully")
-					err := os.Truncate(state_file_path, 0)
-					if err != nil {
-						os.Create(state_file_path + "/state.txt")
-					} else {
-						os.WriteFile(state_file_path+"/state.txt", []byte("gdb"), 0644)
-					}
-					fmt.Println("[*] uninstalled all tools successfully")
-					return
-				}
-			}
+			os.RemoveAll(app_dir)
+			fmt.Println("[*] uninstalled tools successfully")
+			return
 		}
 		//help session
 	} else {

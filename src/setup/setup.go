@@ -33,6 +33,7 @@ func Setpeda(dir string) bool {
 
 func Setgef(dir string) bool {
 	err := os.Truncate(GDB_INIT_FILE, 0)
+	fmt.Println(dir)
 	if !(err == nil) {
 		fmt.Fprintln(os.Stderr, "[x] ~/.gdbinit is not found")
 		return false
