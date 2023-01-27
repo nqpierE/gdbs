@@ -10,3 +10,11 @@ chmod +x install.sh
 ```
 This application also manages installation of all tools so, you needn't install whatever install tools.
 However, tools are installed by this application won't conflict tools are already installed in your system.
+
+# Usage
+Run following command to show usage.
+```
+gdbs
+```
+
+
