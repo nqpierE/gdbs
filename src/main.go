@@ -32,7 +32,6 @@ func Install(mod Gdbmod) bool {
 	if mod.Name == "gdb" {
 		return true
 	}
-	fmt.Println(!include(mod.GdbModsContainsNames, mod.Name))
 	if !include(mod.GdbModsContainsNames, mod.Name) {
 		var err_flag bool = false
 		switch mod.Name {
@@ -45,7 +44,6 @@ func Install(mod Gdbmod) bool {
 				err_flag = !err_flag
 			}
 		case "pwndbg":
-			fmt.Println("ここ")
 			if !install.Installpwndbg(mod.InstallDir) {
 				err_flag = !err_flag
 			}
@@ -70,7 +68,6 @@ func Setup(mod Gdbmod) {
 			err_flag = !err_flag
 		}
 	case "peda":
-		fmt.Println(err_flag)
 		if !setup.Setpeda(mod.InstallDir) {
 			err_flag = !err_flag
 		}
