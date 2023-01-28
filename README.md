@@ -1,6 +1,9 @@
 # gdbs
 Application to switch tools of gdb. This application supports legacy gdb, peda, gef, pwndbg.
 
+# Requirements
+You have to install go and gdb.
+
 # installaion
 Run following commands to install application.
 ```
